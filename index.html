@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Md Muntasir Khan | Game Programmer</title>
+  <meta name="description" content="Portfolio of Md Muntasir Khan, a Game Programming student at Humber College who builds games in C++.">
+  <meta name="theme-color" content="#080a24">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cpath d='M58 32 14 12l8 20-8 20z' fill='%234de4ff'/%3E%3C/svg%3E">
+
+  <!-- Fonts from Google. If they fail to load, the browser uses the backup fonts listed in the CSS. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;700&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* =====================================================================
+       1. COLORS AND FONTS
+       Change a color here and it changes everywhere on the site.
+       ===================================================================== */
+    :root {
+      --space: #0c1033;        /* main page background */
+      --space-deep: #080a24;   /* darker background for hero and alternate sections */
+      --panel: #151a4a;        /* boxes and panels */
+      --edge: #2f3a8f;         /* borders */
+      --text: #e9ecff;         /* main text */
+      --muted: #a3abdc;        /* softer text */
+      --cyan: #4de4ff;         /* player color, main accent */
+      --coral: #ff5c7a;        /* enemy color */
+      --amber: #ffc857;        /* bullets and highlights */
+      --lilac: #9aa6ff;
+      --font-display: "Pixelify Sans", "Courier New", monospace;
+      --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    }
+
+    /* =====================================================================
+       2. BASICS
+       ===================================================================== */
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 4.5rem; }
+    body {
+      margin: 0;
+      background: var(--space);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 1.0625rem;
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+    }
+    svg, canvas { display: block; max-width: 100%; }
+    a { color: var(--cyan); }
+    :focus-visible { outline: 3px solid var(--amber); outline-offset: 3px; }
+
+    .wrap { width: min(1100px, calc(100% - 2.5rem)); margin-inline: auto; }
+
+    /* Buttons and button-style links */
+    .btn {
+      display: inline-block;
+      padding: 0.7rem 1.2rem;
+      border: 2px solid var(--cyan);
+      border-radius: 2px;
+      background: transparent;
+      color: var(--cyan);
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn:hover { background: var(--cyan); color: var(--space-deep); }
+    .btn-primary { background: var(--cyan); color: var(--space-deep); }
+    .btn-primary:hover { background: var(--text); border-color: var(--text); }
+
+    /* =====================================================================
+       3. TOP BAR
+       ===================================================================== */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(8, 10, 36, 0.9);
+      backdrop-filter: blur(8px);
+      border-bottom: 2px solid var(--edge);
+    }
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.5rem;
+      padding: 0.7rem 0;
+    }
+    .brand {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav { display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; }
+    .nav a {
+      padding: 0.2rem 0;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .nav a:hover { color: var(--text); border-bottom-color: var(--cyan); }
+
+    /* =====================================================================
+       4. HERO (the space shooter at the top)
+       ===================================================================== */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      min-height: min(86vh, 720px);
+      background:
+        radial-gradient(700px 420px at 82% 18%, rgba(255, 92, 122, 0.18), transparent 65%),
+        radial-gradient(760px 520px at 8% 95%, rgba(77, 228, 255, 0.14), transparent 65%),
+        var(--space-deep);
+    }
+    .hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .hero-text { position: relative; z-index: 1; padding: 4rem 0 5rem; pointer-events: none; }
+    .hero-text a { pointer-events: auto; }
+    .hero h1 {
+      margin: 0 0 1.2rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(2.7rem, 8vw, 5.6rem);
+      line-height: 1.02;
+      text-shadow: 0 3px 0 rgba(0, 0, 0, 0.45);
+    }
+    .hero-sub {
+      max-width: 34ch;
+      margin: 0 0 2rem;
+      font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+      text-shadow: 0 2px 8px rgba(8, 10, 36, 0.9);
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+    .hero-hint {
+      position: absolute;
+      right: 1.25rem;
+      bottom: 0.9rem;
+      z-index: 1;
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+      text-align: right;
+      pointer-events: none;
+    }
+
+    /* =====================================================================
+       5. SECTIONS (shared)
+       ===================================================================== */
+    .block { padding: clamp(3.5rem, 8vw, 6rem) 0; }
+    .block-alt { background: var(--space-deep); border-block: 2px solid var(--edge); }
+    .block h2 {
+      margin: 0 0 2rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: clamp(1.8rem, 4vw, 2.5rem);
+      line-height: 1.1;
+    }
+    .block h2::after {
+      content: "";
+      display: block;
+      width: 56px;
+      height: 4px;
+      margin-top: 0.8rem;
+      background: var(--cyan);
+    }
+
+    /* =====================================================================
+       6. ABOUT
+       ===================================================================== */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1.3fr 1fr;
+      gap: 3rem;
+      align-items: start;
+    }
+    .about-text p { max-width: 60ch; margin: 0 0 1.1rem; }
+    .about-note { color: var(--muted); font-size: 0.98rem; }
+    .profile {
+      margin: 0;
+      padding: 1.2rem 1.5rem;
+      background: var(--panel);
+      border: 2px solid var(--edge);
+      border-left: 6px solid var(--cyan);
+    }
+    .profile div { padding: 0.6rem 0; border-bottom: 1px dashed var(--edge); }
+    .profile div:last-child { border-bottom: 0; }
+    .profile dt { color: var(--muted); font-size: 0.9rem; }
+    .profile dd { margin: 0; font-weight: 500; }
+
+    /* =====================================================================
+       7. PROJECTS
+       ===================================================================== */
+    .meta { margin: 0 0 1.1rem; color: var(--muted); font-size: 0.98rem; }
+    .points { margin: 0 0 1.3rem; padding-left: 1.2rem; }
+    .points li { max-width: 56ch; margin-bottom: 0.6rem; }
+    .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0 0 1.4rem; padding: 0; list-style: none; }
+    .tags li {
+      padding: 0.1rem 0.6rem;
+      border: 2px solid var(--edge);
+      border-radius: 2px;
+      color: var(--lilac);
+      font-size: 0.9rem;
+    }
+
+    /* Main project: framed like a targeting reticle */
+    .project-main {
+      position: relative;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 2rem;
+      align-items: center;
+      padding: clamp(1.4rem, 3vw, 2.2rem);
+      background: var(--panel);
+      border: 2px solid var(--edge);
+    }
+    .project-main::before,
+    .project-main::after {
+      content: "";
+      position: absolute;
+      width: 26px;
+      height: 26px;
+      border: 4px solid var(--cyan);
+      pointer-events: none;
+    }
+    .project-main::before { top: -4px; left: -4px; border-right: 0; border-bottom: 0; }
+    .project-main::after { right: -4px; bottom: -4px; border-left: 0; border-top: 0; }
+    .project-title {
+      margin: 0 0 0.4rem;
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      line-height: 1.15;
+    }
+    .project-art { border: 2px solid var(--edge); background: #0a0d2b; }
+
+    /* Second project: styled like a Windows 98 window, because that is what it is */
+    .win98 {
+      width: min(680px, 100%);
+      margin: 2.5rem 0 0 auto;
+      background: #c0c0c0;
+      color: #111;
+      font-family: Tahoma, "MS Sans Serif", Verdana, sans-serif;
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      box-shadow: 1px 1px 0 #000, 8px 8px 0 rgba(0, 0, 0, 0.4);
+    }
+    .win98-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding: 0.3rem 0.4rem 0.3rem 0.6rem;
+      background: linear-gradient(90deg, #000080, #1084d0);
+      color: #fff;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+    .win98-buttons { display: flex; flex: none; gap: 2px; }
+    .win98-buttons span {
+      display: grid;
+      place-items: center;
+      width: 20px;
+      height: 18px;
+      background: #c0c0c0;
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+      color: #000;
+      font-size: 0.7rem;
+      line-height: 1;
+    }
+    .win98-body { padding: 1rem 1.3rem 1.3rem; }
+    .win98-heading { margin: 0 0 0.3rem; font-size: 1.25rem; }
+    .win98 .meta { color: #404040; }
+    .win98 .tags li {
+      background: #c0c0c0;
+      color: #111;
+      border: 2px solid;
+      border-color: #fff #404040 #404040 #fff;
+    }
+
+    /* =====================================================================
+       8. SKILLS
+       ===================================================================== */
+    .skills-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.2rem; }
+    .slot {
+      padding: 1.1rem 1.2rem 1.3rem;
+      background: var(--panel);
+      border: 2px solid var(--edge);
+      border-top-width: 6px;
+    }
+    .slot-cyan { border-top-color: var(--cyan); }
+    .slot-coral { border-top-color: var(--coral); }
+    .slot-amber { border-top-color: var(--amber); }
+    .slot-lilac { border-top-color: var(--lilac); }
+    .slot h3 { margin: 0 0 0.8rem; font-family: var(--font-display); font-size: 1.15rem; }
+    .slot ul { margin: 0; padding: 0; list-style: none; }
+    .slot li { position: relative; margin-bottom: 0.45rem; padding-left: 1.1rem; }
+    .slot li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.6em;
+      width: 7px;
+      height: 7px;
+      background: var(--cyan);
+    }
+    .slot-coral li::before { background: var(--coral); }
+    .slot-amber li::before { background: var(--amber); }
+    .slot-lilac li::before { background: var(--lilac); }
+
+    /* =====================================================================
+       9. CONTACT AND FOOTER
+       ===================================================================== */
+    .contact-text { max-width: 52ch; margin: 0 0 1.6rem; }
+    .contact-links { display: flex; flex-wrap: wrap; gap: 0.9rem; }
+    .footer {
+      padding: 1.6rem 0 2rem;
+      border-top: 2px solid var(--edge);
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .footer p { margin: 0; }
+
+    /* =====================================================================
+       10. SMALLER SCREENS AND ACCESSIBILITY
+       ===================================================================== */
+    @media (max-width: 900px) {
+      .skills-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 760px) {
+      .about-grid, .project-main { grid-template-columns: 1fr; }
+      .about-grid { gap: 2rem; }
+      .win98 { margin-left: 0; }
+      .skills-grid { grid-template-columns: 1fr; }
+      .hero-hint { left: 1.25rem; text-align: left; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="wrap topbar-inner">
+      <a class="brand" href="#top">Muntasir Khan</a>
+      <nav class="nav" aria-label="Main">
+        <a href="#about">About</a>
+        <a href="#projects">Projects</a>
+        <a href="#skills">Skills</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ===================== HERO ===================== -->
+    <section class="hero" id="top">
+      <canvas class="hero-canvas" id="sky" aria-hidden="true"></canvas>
+      <div class="wrap hero-text">
+        <h1>Md Muntasir Khan</h1>
+        <!-- EDIT ME: your one-line introduction -->
+        <p class="hero-sub">Game Programming student at Humber College, building games in C++.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#projects">See my projects</a>
+          <a class="btn" href="https://github.com/mdmuntasirkhan" target="_blank" rel="noopener noreferrer">GitHub</a>
+        </div>
+      </div>
+      <p class="hero-hint" id="hint" hidden>Move your mouse to fly, click to shoot. Asteroids cleared: <span id="count">0</span></p>
+    </section>
+
+    <!-- ===================== ABOUT ===================== -->
+    <section class="block" id="about">
+      <div class="wrap">
+        <h2>About me</h2>
+        <div class="about-grid">
+          <div class="about-text">
+            <!-- EDIT ME: rewrite these two paragraphs in your own voice -->
+            <p>I'm a Game Programming student at Humber College, learning video game development with C++. I also use Blender a lot to make 3D models for my own game ideas.</p>
+            <p>Over summer break I built a space shooter by myself. It uses C++, OpenGL for the graphics pipeline, SDL for window management, and Blender for the 3D models. You can find it in the projects section.</p>
+            <p class="about-note">Coursework: Data Structures and Design Patterns, Computer Networking, Game Engines, Computer Graphics.</p>
+          </div>
+          <dl class="profile">
+            <div><dt>School</dt><dd>Humber College</dd></div>
+            <div><dt>Program</dt><dd>Game Programming</dd></div>
+            <div><dt>Graduating</dt><dd>April 2028 (expected)</dd></div>
+            <div><dt>Main language</dt><dd>C++</dd></div>
+            <div><dt>Based in</dt><dd>Greater Toronto Area, Ontario</dd></div>
+            <div><dt>Looking for</dt><dd>Game programming internship or co-op</dd></div>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PROJECTS ===================== -->
+    <section class="block block-alt" id="projects">
+      <div class="wrap">
+        <h2>Projects</h2>
+
+        <!-- Project 1 -->
+        <article class="project-main">
+          <div>
+            <h3 class="project-title">Alpha Wing EX Remake</h3>
+            <p class="meta">Engine Programmer, June to September 2026</p>
+            <ul class="points">
+              <li>Built a 2.5D space shooter in C++ on a school-provided component framework, with an OpenGL rendering pipeline, physics, and collision systems.</li>
+              <li>Designed 6+ enemy AI archetypes, a health and damage system, and 3 weapon types: bullet, missile, and shield.</li>
+              <li>Modeled all the in-game 3D assets in Blender and made original sound design in Ableton Live.</li>
+            </ul>
+            <ul class="tags" aria-label="Tools used">
+              <li>C++</li><li>OpenGL</li><li>SDL</li><li>Blender</li><li>Ableton Live 12</li>
+            </ul>
+            <!-- EDIT ME: replace this link with the exact link to your Alpha Wing repository -->
+            <a class="btn" href="https://github.com/mdmuntasirkhan" target="_blank" rel="noopener noreferrer">See the code on GitHub</a>
+          </div>
+
+          <div class="project-art">
+            <svg viewBox="0 0 320 220" role="img" aria-label="Illustration of a small spaceship firing bullets at an asteroid">
+              <rect width="320" height="220" fill="#0a0d2b"/>
+              <g fill="#e9ecff">
+                <rect x="24" y="30" width="3" height="3"/>
+                <rect x="88" y="170" width="2" height="2"/>
+                <rect x="140" y="52" width="2" height="2"/>
+                <rect x="210" y="190" width="3" height="3"/>
+                <rect x="262" y="38" width="2" height="2"/>
+                <rect x="48" y="118" width="2" height="2"/>
+                <rect x="176" y="150" width="2" height="2"/>
+                <rect x="296" y="150" width="3" height="3"/>
+              </g>
+              <polygon points="248,78 276,70 298,88 296,118 272,134 244,124 234,100" fill="none" stroke="#ff5c7a" stroke-width="4" stroke-linejoin="round"/>
+              <g fill="#ffc857">
+                <rect x="150" y="106" width="22" height="5"/>
+                <rect x="190" y="106" width="22" height="5"/>
+              </g>
+              <polygon points="62,101 30,108 62,115" fill="#ffc857"/>
+              <polygon points="130,108 44,78 62,108 44,138" fill="#4de4ff"/>
+              <rect x="82" y="104" width="22" height="8" fill="#0c1033"/>
+            </svg>
+          </div>
+        </article>
+
+        <!-- Project 2 (Windows 98 style window) -->
+        <article class="win98">
+          <div class="win98-bar">
+            <span>FakeOS_Desktop_Simulation.exe</span>
+            <span class="win98-buttons" aria-hidden="true"><span>_</span><span>&#9633;</span><span>&times;</span></span>
+          </div>
+          <div class="win98-body">
+            <h3 class="win98-heading">Fake OS Desktop Simulation</h3>
+            <p class="meta">Humber College project, March to April 2026</p>
+            <ul class="points">
+              <li>Built a Windows 98 style desktop simulation in Unreal Engine using only Blueprints. It has a working password-protected lock screen, a working camera app, and a fake search engine and browser.</li>
+              <li>Attached the OS interface to a 3D laptop model, so the player can use it directly inside the game world.</li>
+            </ul>
+            <ul class="tags" aria-label="Tools used">
+              <li>Unreal Engine 5</li><li>Blueprints</li>
+            </ul>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ===================== SKILLS ===================== -->
+    <section class="block" id="skills">
+      <div class="wrap">
+        <h2>Skills</h2>
+        <div class="skills-grid">
+          <div class="slot slot-cyan">
+            <h3>Languages</h3>
+            <ul><li>C++</li></ul>
+          </div>
+          <div class="slot slot-coral">
+            <h3>Graphics</h3>
+            <ul><li>SDL</li><li>OpenGL</li><li>Vulkan</li></ul>
+          </div>
+          <div class="slot slot-amber">
+            <h3>Tools and engines</h3>
+            <ul><li>Git and GitHub</li><li>Blender (3D modeling)</li><li>Unreal Engine 5</li><li>Ableton Live 12</li></ul>
+          </div>
+          <div class="slot slot-lilac">
+            <h3>Concepts</h3>
+            <ul><li>Component-based engine architecture</li><li>Data structures</li><li>Networking fundamentals</li></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== CONTACT ===================== -->
+    <section class="block block-alt" id="contact">
+      <div class="wrap">
+        <h2>Contact</h2>
+        <!-- EDIT ME -->
+        <p class="contact-text">I'm looking for a game programming internship or co-op. If you want to talk about a role, a project, or a game idea, send me an email.</p>
+        <div class="contact-links">
+          <a class="btn btn-primary" href="mailto:md.muntasir.khan@hotmail.com">Email me</a>
+          <a class="btn" href="https://github.com/mdmuntasirkhan" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a class="btn" href="https://www.linkedin.com/in/mdmuntasirkhan99" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a class="btn" href="https://artstation.com/muntasirkhan" target="_blank" rel="noopener noreferrer">ArtStation</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="wrap">
+      <p>&copy; 2026 Md Muntasir Khan. Built with HTML, CSS, and a little JavaScript.</p>
+    </div>
+  </footer>
+
+  <!-- =====================================================================
+       HERO ANIMATION
+       A starfield with a ship that follows your pointer and asteroids to shoot.
+       You do not need to edit anything below this line.
+       ===================================================================== -->
+  <script>
+    (function () {
+      var hero = document.getElementById('top');
+      var canvas = document.getElementById('sky');
+      var hint = document.getElementById('hint');
+      var countEl = document.getElementById('count');
+      var ctx = canvas.getContext('2d');
+      if (!ctx) { return; }
+
+      var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      var w = 0, h = 0, placed = false;
+      var stars = [], bullets = [], rocks = [], sparks = [];
+      var ship = { x: 0, y: 0, tx: 0, ty: 0 };
+      var cleared = 0, rockTimer = 1, fireTimer = 0, firing = false;
+      var lastTime = 0, running = false, rafId = 0;
+
+      // Three star layers. The close ones move faster, which gives the parallax feel.
+      var LAYERS = [
+        { speed: 14, size: 1.2, alpha: 0.45 },
+        { speed: 34, size: 1.8, alpha: 0.7 },
+        { speed: 78, size: 2.6, alpha: 1 }
+      ];
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+
+      function makeStars() {
+        stars = [];
+        var total = Math.max(40, Math.floor((w * h) / 9000));
+        for (var i = 0; i < total; i++) {
+          stars.push({ x: rand(0, w), y: rand(0, h), layer: i % 3 });
+        }
+      }
+
+      function resize() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        w = hero.clientWidth;
+        h = hero.clientHeight;
+        canvas.width = Math.round(w * dpr);
+        canvas.height = Math.round(h * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        makeStars();
+        if (!placed) {
+          ship.x = ship.tx = w * 0.62;
+          ship.y = ship.ty = h * 0.6;
+          placed = true;
+        } else {
+          ship.tx = Math.min(ship.tx, w);
+          ship.ty = Math.min(ship.ty, h);
+        }
+        draw();
+      }
+
+      function spawnRock() {
+        var r = rand(16, 34), n = 8, pts = [];
+        for (var i = 0; i < n; i++) {
+          var a = (i / n) * Math.PI * 2;
+          var rr = r * rand(0.75, 1.1);
+          pts.push([Math.cos(a) * rr, Math.sin(a) * rr]);
+        }
+        rocks.push({
+          x: w + r + 10, y: rand(r, h - r), r: r,
+          vx: -rand(40, 90), rot: rand(0, 6.28), vr: rand(-1, 1), pts: pts
+        });
+      }
+
+      function burst(x, y) {
+        for (var i = 0; i < 10; i++) {
+          var a = rand(0, Math.PI * 2), s = rand(40, 160);
+          sparks.push({ x: x, y: y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 });
+        }
+      }
+
+      function shoot() {
+        bullets.push({ x: ship.x + 22, y: ship.y });
+        fireTimer = 0.16;
+      }
+
+      function update(dt) {
+        var i, j;
+
+        for (i = 0; i < stars.length; i++) {
+          var s = stars[i];
+          s.x -= LAYERS[s.layer].speed * dt;
+          if (s.x < -3) { s.x = w + 3; s.y = rand(0, h); }
+        }
+
+        ship.x += (ship.tx - ship.x) * Math.min(1, dt * 9);
+        ship.y += (ship.ty - ship.y) * Math.min(1, dt * 9);
+
+        fireTimer -= dt;
+        if (firing && fireTimer <= 0) { shoot(); }
+        for (i = bullets.length - 1; i >= 0; i--) {
+          bullets[i].x += 620 * dt;
+          if (bullets[i].x > w + 20) { bullets.splice(i, 1); }
+        }
+
+        rockTimer -= dt;
+        if (rockTimer <= 0 && rocks.length < 6) { spawnRock(); rockTimer = rand(1.0, 2.2); }
+        for (i = rocks.length - 1; i >= 0; i--) {
+          var rk = rocks[i];
+          rk.x += rk.vx * dt;
+          rk.rot += rk.vr * dt;
+          if (rk.x < -rk.r - 20) { rocks.splice(i, 1); continue; }
+          for (j = bullets.length - 1; j >= 0; j--) {
+            var dx = bullets[j].x - rk.x, dy = bullets[j].y - rk.y;
+            if (dx * dx + dy * dy < rk.r * rk.r) {
+              bullets.splice(j, 1);
+              rocks.splice(i, 1);
+              burst(rk.x, rk.y);
+              cleared++;
+              countEl.textContent = cleared;
+              break;
+            }
+          }
+        }
+
+        for (i = sparks.length - 1; i >= 0; i--) {
+          var p = sparks[i];
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.life -= dt;
+          if (p.life <= 0) { sparks.splice(i, 1); }
+        }
+      }
+
+      function drawShip() {
+        var x = ship.x, y = ship.y;
+        var flame = reduceMotion ? 10 : 8 + Math.random() * 7;
+        ctx.fillStyle = '#ffc857';
+        ctx.beginPath();
+        ctx.moveTo(x - 10, y - 4);
+        ctx.lineTo(x - 10 - flame, y);
+        ctx.lineTo(x - 10, y + 4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#4de4ff';
+        ctx.beginPath();
+        ctx.moveTo(x + 20, y);
+        ctx.lineTo(x - 14, y - 12);
+        ctx.lineTo(x - 7, y);
+        ctx.lineTo(x - 14, y + 12);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#0c1033';
+        ctx.fillRect(x - 2, y - 2, 9, 4);
+      }
+
+      function draw() {
+        var i, k;
+        ctx.clearRect(0, 0, w, h);
+
+        ctx.fillStyle = '#e9ecff';
+        for (i = 0; i < stars.length; i++) {
+          var L = LAYERS[stars[i].layer];
+          ctx.globalAlpha = L.alpha;
+          ctx.fillRect(stars[i].x, stars[i].y, L.size, L.size);
+        }
+        ctx.globalAlpha = 1;
+
+        ctx.lineWidth = 3;
+        ctx.lineJoin = 'round';
+        ctx.strokeStyle = '#ff5c7a';
+        for (i = 0; i < rocks.length; i++) {
+          var rk = rocks[i];
+          ctx.save();
+          ctx.translate(rk.x, rk.y);
+          ctx.rotate(rk.rot);
+          ctx.beginPath();
+          for (k = 0; k < rk.pts.length; k++) {
+            if (k === 0) { ctx.moveTo(rk.pts[k][0], rk.pts[k][1]); }
+            else { ctx.lineTo(rk.pts[k][0], rk.pts[k][1]); }
+          }
+          ctx.closePath();
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        ctx.fillStyle = '#ffc857';
+        for (i = 0; i < bullets.length; i++) {
+          ctx.fillRect(bullets[i].x - 10, bullets[i].y - 2, 20, 4);
+        }
+
+        for (i = 0; i < sparks.length; i++) {
+          ctx.globalAlpha = Math.max(0, sparks[i].life / 0.5);
+          ctx.fillRect(sparks[i].x, sparks[i].y, 3, 3);
+        }
+        ctx.globalAlpha = 1;
+
+        drawShip();
+      }
+
+      function frame(t) {
+        if (!running) { return; }
+        var dt = Math.min(0.05, (t - lastTime) / 1000) || 0;
+        lastTime = t;
+        update(dt);
+        draw();
+        rafId = requestAnimationFrame(frame);
+      }
+
+      function start() {
+        if (running || reduceMotion) { return; }
+        running = true;
+        lastTime = performance.now();
+        rafId = requestAnimationFrame(frame);
+      }
+
+      function stop() {
+        running = false;
+        cancelAnimationFrame(rafId);
+      }
+
+      function localPoint(e) {
+        var r = hero.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      resize();
+      window.addEventListener('resize', resize);
+      window.addEventListener('load', resize);
+
+      // If the visitor asked their device for less motion, show one still picture and stop here.
+      if (reduceMotion) { return; }
+
+      hint.hidden = false;
+
+      hero.addEventListener('pointermove', function (e) {
+        var p = localPoint(e);
+        ship.tx = p.x;
+        ship.ty = p.y;
+      });
+      hero.addEventListener('pointerdown', function (e) {
+        if (e.target.closest('a, button')) { return; }
+        var p = localPoint(e);
+        ship.tx = p.x;
+        ship.ty = p.y;
+        if (fireTimer <= 0) { shoot(); }
+        firing = true;
+      });
+      window.addEventListener('pointerup', function () { firing = false; });
+      window.addEventListener('pointercancel', function () { firing = false; });
+
+      // Only animate while the hero is on screen, to save battery.
+      if ('IntersectionObserver' in window) {
+        new IntersectionObserver(function (entries) {
+          if (entries[0].isIntersecting) { start(); } else { stop(); }
+        }).observe(hero);
+      } else {
+        start();
+      }
+    })();
+  </script>
+
+</body>
+</html>
